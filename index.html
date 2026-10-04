@@ -51,6 +51,9 @@ dialog input,dialog select{width:100%;background:#f7f9fa;border:1px solid var(--
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 body.lock main{visibility:hidden}
+main{transition:opacity .2s}
+body:not(.lock) main{opacity:1}
+body.lock main{opacity:0}
 .ro .act,.ro #add,.ro #addo,.ro th:last-child,.ro td:last-child{display:none}
 #otbl{min-width:840px}
 </style>
@@ -60,7 +63,7 @@ body.lock main{visibility:hidden}
 <button id="reopen" style="display:none;position:fixed;top:16px;left:16px;z-index:9;background:#0f6b6b;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:600 14px system-ui,sans-serif;cursor:pointer">Đăng nhập</button>
 <main>
   <div class="brand"><span class="mark">UA</span><div><h1>UniAlliance Manager</h1><p class="sub">Dữ liệu dùng chung một nơi cho cả nhóm — mọi người thấy cùng một danh sách theo thời gian thực.</p></div></div>
-  <div class="me"><span id="me">Đang kết nối...</span><button class="btn ghost sm" id="out" hidden>Đăng xuất</button></div>
+  <div class="me"><span id="me">Đang kết nối...</span><button class="btn ghost sm" id="pw" hidden>Đổi mật khẩu</button><button class="btn ghost sm" id="out" hidden>Đăng xuất</button></div>
 
   <div class="stats" id="stats"></div>
   <div class="bar">
@@ -87,6 +90,16 @@ body.lock main{visibility:hidden}
     <label for="ap">Mật khẩu</label><input id="ap" type="password" required minlength="6" maxlength="60" autocomplete="current-password">
     <div class="msg" id="am" role="status"></div>
     <div class="foot"><button class="btn" type="submit" id="ab">Đăng nhập</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlp">
+  <form id="fp">
+    <h2>Đổi mật khẩu</h2>
+    <label for="p1">Mật khẩu mới</label><input id="p1" type="password" required minlength="6" maxlength="60" autocomplete="new-password">
+    <label for="p2">Nhập lại mật khẩu mới</label><input id="p2" type="password" required minlength="6" maxlength="60" autocomplete="new-password">
+    <div class="msg" id="pm" role="status"></div>
+    <div class="foot"><button type="button" class="btn ghost" id="cancelp">Hủy</button><button class="btn" type="submit">Lưu mật khẩu</button></div>
   </form>
 </dialog>
 
@@ -228,13 +241,35 @@ async function loadOrders(){var r=await sb.from("orders").select("*").order("id"
 sb.channel("db-changes")
   .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
   .on("postgres_changes",{event:"*",schema:"public",table:"orders"},loadOrders)
+  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"profiles"},async function(payload){
+    if(me&&payload.new&&payload.new.id===me.id){profile=payload.new;setCan()}
+  })
   .subscribe();
+
+// Tự làm mới khi quay lại tab, phòng khi mạng vừa rớt kết nối realtime
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&profile){loadMembers();loadOrders()}
+});
 
 /* ---- chỉ đăng nhập (tài khoản tạo sẵn ở Supabase Dashboard) ---- */
 $("dla").addEventListener("cancel",function(e){e.preventDefault()});
 $("dla").addEventListener("close",function(){if(!profile){$("reopen").style.display="block"}});
 $("reopen").onclick=function(){$("reopen").style.display="none";if(!$("dla").open)$("dla").showModal()};
-$("out").onclick=async function(){await sb.auth.signOut();me=null;profile=null;location.reload()};
+$("out").onclick=async function(){
+  await sb.auth.signOut();me=null;profile=null;
+  document.body.classList.add("lock");$("out").hidden=true;$("pw").hidden=true;
+  $("an").value="";$("ap").value="";$("am").textContent="";
+  if(!$("dla").open)$("dla").showModal();
+};
+$("pw").onclick=function(){$("p1").value="";$("p2").value="";$("pm").textContent="";$("dlp").showModal()};
+$("cancelp").onclick=function(){$("dlp").close()};
+$("fp").onsubmit=async function(ev){ev.preventDefault();
+  var a=$("p1").value,b=$("p2").value,pm=$("pm");pm.style.color="var(--bad)";
+  if(a!==b){pm.textContent="Hai mật khẩu không khớp.";return}
+  var r=await sb.auth.updateUser({password:a});
+  if(r.error){pm.textContent="Không đổi được: "+r.error.message;return}
+  toast("Đã đổi mật khẩu");$("dlp").close();
+};
 
 $("fl").onsubmit=async function(ev){ev.preventDefault();
   var name=$("an").value.trim(),pw=$("ap").value,email=slugEmail(name),am=$("am");
@@ -251,7 +286,7 @@ async function checkSession(){
   var pr=await sb.from("profiles").select("*").eq("id",me.id).maybeSingle();
   profile=pr.data;
   if(!profile){await sb.auth.signOut();$("am").textContent="Tài khoản chưa có hồ sơ, báo người quản lý thêm hồ sơ trong profiles.";document.body.classList.add("lock");return}
-  document.body.classList.remove("lock");$("out").hidden=false;if($("dla").open)$("dla").close();
+  document.body.classList.remove("lock");$("out").hidden=false;$("pw").hidden=false;if($("dla").open)$("dla").close();
   await loadMembers();await loadOrders();
 }
 checkSession().catch(function(e){showBootErr("Có lỗi khi kết nối tới Supabase: "+(e&&e.message?e.message:e)+". Kiểm tra lại SUPA_URL/SUPA_KEY và luật RLS trong SQL đã chạy đúng chưa.")});
