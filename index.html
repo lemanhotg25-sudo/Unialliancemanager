@@ -206,6 +206,7 @@ $("rows").onclick=async function(ev){
 };
 $("rows").onchange=async function(ev){
   var sel=ev.target;if(!sel.classList||!sel.classList.contains("inline-role"))return;
+  if(!CAN){toast("Bạn không có quyền sửa vai trò");sel.disabled=true;loadMembers();return}
   var id=sel.dataset.rolefor||sel.dataset.role2for,field=sel.dataset.rolefor?"role":"role2",val=sel.value||null;
   var upd={};upd[field]=val;
   try{var r=await sb.from("members").update(upd).eq("id",id);
@@ -268,7 +269,7 @@ function setCan(){
   var nm=profile?profile.display_name:"";
   $("me").innerHTML=esc(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?'Chỉnh sửa <span style="color:var(--gold);font-weight:600">(owner)</span>':"Chỉ xem");
 }
-async function loadMembers(){var r=await sb.from("members").select("*").order("id");list=r.data||[];render();setCan()}
+async function loadMembers(){var r=await sb.from("members").select("*").order("id");list=r.data||[];setCan();render()}
 async function loadOrders(){var r=await sb.from("orders").select("*").order("id",{ascending:false});orders=r.data||[];renderO()}
 sb.channel("db-changes")
   .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
@@ -318,6 +319,7 @@ async function checkSession(){
   var pr=await sb.from("profiles").select("*").eq("id",me.id).maybeSingle();
   profile=pr.data;
   if(!profile){await sb.auth.signOut();$("am").textContent="Tài khoản chưa có hồ sơ, báo người quản lý thêm hồ sơ trong profiles.";document.body.classList.add("lock");return}
+  setCan();
   document.body.classList.remove("lock");$("out").hidden=false;$("pw").hidden=false;if($("dla").open)$("dla").close();
   await loadMembers();await loadOrders();
 }
