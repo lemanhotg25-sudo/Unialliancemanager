@@ -4,16 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>UniAlliance Manager</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23145da9%27/%3E%3Cpath d=%27M32 10 L38 30 L54 38 L38 40 L34 54 L30 40 L10 38 L30 30 Z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-:root{--bg:#fff;--panel:#fff;--ink:#14232e;--mute:#5d6f7b;--line:#dbe3e8;--acc:#0f6b6b;--acc-ink:#fff;--soft:#e3f1f0;--bad:#b3362c;--badbg:#fbe9e7;
+:root{--bg:#f6f9fc;--panel:#fff;--ink:#102338;--mute:#5c7087;--line:#dbe3ec;--acc:#145da9;--acc-ink:#fff;--soft:#e4edf7;--gold:#c98a2b;--bad:#b3362c;--badbg:#fbe9e7;
 --glass-bg:linear-gradient(135deg,rgba(120,180,255,.38),rgba(70,130,240,.22));--glass-brd:rgba(255,255,255,.55);--glass-hi:rgba(255,255,255,.6)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
 main{max-width:1000px;margin:0 auto;padding:28px 16px 48px}
 .brand{display:flex;gap:14px;align-items:center;margin-bottom:22px}
-.mark{flex:none;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1e6fd9,#0f6b6b);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;box-shadow:0 6px 18px -6px rgba(20,90,200,.5)}
+.mark{flex:none;width:46px;height:46px;border-radius:13px;background:radial-gradient(circle at 30% 25%,#13233f,#060b16 70%);display:grid;place-items:center;box-shadow:0 6px 18px -6px rgba(10,20,40,.6);overflow:hidden}
+.mark svg{width:34px;height:34px}
+.brand{position:relative;padding-bottom:14px}
+.brand::after{content:"";position:absolute;left:0;bottom:0;width:72px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--gold),transparent)}
 h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.01em}
 .sub{color:var(--mute);margin:2px 0 0}
 .me{color:var(--mute);font-size:13px;margin:-10px 0 18px;display:flex;gap:10px;align-items:center}
@@ -39,18 +43,21 @@ tr:last-child td{border-bottom:0}
 .tag.wait{background:#f2f4f5;color:var(--mute);border:1px solid var(--line)}
 .cd{color:var(--mute);font-size:13px}
 .inline-role{background:#f7f9fa;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:13px;min-height:32px}
+.inline-role:disabled{opacity:.6;cursor:not-allowed;background:transparent;border-color:transparent;-webkit-appearance:none;appearance:none}
 .act{white-space:nowrap;display:flex;gap:6px}
 .empty{padding:36px 16px;text-align:center;color:var(--mute)}
-dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:22px;width:min(440px,calc(100% - 24px))}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:22px;width:min(440px,calc(100% - 24px));animation:dlgin .16s ease-out}
 dialog::backdrop{background:rgba(10,20,26,.5)}
+@keyframes dlgin{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.btn:active{transform:scale(.97)}
 dialog h2{margin:0 0 14px;font-size:18px}
 label{display:block;font-size:13px;font-weight:500;margin:10px 0 4px}
 dialog input,dialog select{width:100%;background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-height:40px}
 .row{display:flex;gap:10px}.row>div{flex:1}
 .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .msg{min-height:20px;font-size:13px;margin-top:8px}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
-.toast.on{opacity:1}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,8px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 body.lock main{visibility:hidden}
 main{transition:opacity .2s}
 body:not(.lock) main{opacity:1}
@@ -63,7 +70,17 @@ body.lock main{opacity:0}
 <div id="bootErr" style="display:none;max-width:640px;margin:40px auto;padding:20px;border:1px solid #f0c;border-radius:10px;background:#fff3f2;color:#7a1f16;font:15px/1.5 system-ui,sans-serif"></div>
 <button id="reopen" style="display:none;position:fixed;top:16px;left:16px;z-index:9;background:#0f6b6b;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:600 14px system-ui,sans-serif;cursor:pointer">Đăng nhập</button>
 <main>
-  <div class="brand"><span class="mark">UA</span><div><h1>UniAlliance Manager</h1><p class="sub">Dữ liệu dùng chung một nơi cho cả nhóm — mọi người thấy cùng một danh sách theo thời gian thực.</p></div></div>
+  <div class="brand"><span class="mark"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="10" cy="12" r="0.6" fill="#fff" opacity=".6"/><circle cx="50" cy="8" r="0.7" fill="#fff" opacity=".5"/>
+  <circle cx="56" cy="24" r="0.6" fill="#fff" opacity=".6"/><circle cx="14" cy="48" r="0.7" fill="#fff" opacity=".5"/>
+  <circle cx="46" cy="52" r="0.6" fill="#fff" opacity=".55"/><circle cx="26" cy="10" r="0.5" fill="#fff" opacity=".5"/>
+  <g fill="#fff">
+    <path d="M30 56 L20 36 L26 38 Z" opacity=".7"/>
+    <path d="M23 29 L18 25 L20 31 L15 30 Z" opacity=".85"/>
+    <path d="M33 23 L27 18 L29 25 L23 23 L26 28 Z" opacity=".92"/>
+    <path d="M46 14 L37 7 L40 16 L31 13 L35 20 Z"/>
+  </g>
+</svg></span><div><h1>UniAlliance Manager</h1><p class="sub">Dữ liệu dùng chung một nơi cho cả nhóm — mọi người thấy cùng một danh sách theo thời gian thực.</p></div></div>
   <div class="me"><span id="me">Đang kết nối...</span><button class="btn ghost sm" id="pw" hidden>Đổi mật khẩu</button><button class="btn ghost sm" id="out" hidden>Đăng xuất</button></div>
 
   <div class="stats" id="stats"></div>
@@ -162,10 +179,11 @@ function fail(e){toast("Không lưu được: "+(e&&e.message?e.message:"lỗi k
 var ROLES=["Thành viên","Trưởng nhóm","Phó nhóm","Thư kí","Phụ bán thân rộng","Phụ bán thân hẹp"];
 function roleOpts(cur,allowEmpty){var h=allowEmpty?'<option value="">— Không có —</option>':"";
   ROLES.forEach(function(r){h+='<option'+(r===cur?" selected":"")+'>'+r+'</option>'});return h}
+function dis(){return CAN?"":"disabled"}
 function render(){
   var q=$("q").value.trim().toLowerCase();
   var out=list.filter(function(m){return !q||m.name.toLowerCase().indexOf(q)>-1});
-  $("rows").innerHTML=out.map(function(m){return '<tr><td>'+esc(m.name)+'</td><td><select class="inline-role" data-rolefor="'+m.id+'">'+roleOpts(m.role,false)+'</select></td><td><select class="inline-role" data-role2for="'+m.id+'">'+roleOpts(m.role2,true)+'</select></td><td><div class="act"><button class="btn ghost sm" data-ed="'+m.id+'">Sửa tên</button><button class="btn ghost sm del" data-del="'+m.id+'">Xóa</button></div></td></tr>'}).join("");
+  $("rows").innerHTML=out.map(function(m){return '<tr><td>'+esc(m.name)+'</td><td><select class="inline-role" '+dis()+' data-rolefor="'+m.id+'">'+roleOpts(m.role,false)+'</select></td><td><select class="inline-role" '+dis()+' data-role2for="'+m.id+'">'+roleOpts(m.role2,true)+'</select></td><td><div class="act"><button class="btn ghost sm" data-ed="'+m.id+'">Sửa tên</button><button class="btn ghost sm del" data-del="'+m.id+'">Xóa</button></div></td></tr>'}).join("");
   $("empty").hidden=out.length>0;
   $("stats").innerHTML='<div><b>'+list.length+'</b><span>Tổng thành viên</span></div>';
 }
@@ -248,7 +266,7 @@ function setCan(){
   CAN=!!(profile&&profile.is_owner);
   document.body.classList.toggle("ro",!CAN);
   var nm=profile?profile.display_name:"";
-  $("me").textContent=(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?"Chỉnh sửa (owner)":"Chỉ xem");
+  $("me").innerHTML=esc(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?'Chỉnh sửa <span style="color:var(--gold);font-weight:600">(owner)</span>':"Chỉ xem");
 }
 async function loadMembers(){var r=await sb.from("members").select("*").order("id");list=r.data||[];render();setCan()}
 async function loadOrders(){var r=await sb.from("orders").select("*").order("id",{ascending:false});orders=r.data||[];renderO()}
