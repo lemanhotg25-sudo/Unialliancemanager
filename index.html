@@ -54,7 +54,7 @@ body.lock main{visibility:hidden}
 main{transition:opacity .2s}
 body:not(.lock) main{opacity:1}
 body.lock main{opacity:0}
-.ro .act,.ro #add,.ro #addo,.ro th:last-child,.ro td:last-child{display:none}
+.ro .act,.ro #add,.ro th:last-child,.ro td:last-child{display:none}
 #otbl{min-width:840px}
 </style>
 </head>
@@ -78,7 +78,7 @@ body.lock main{opacity:0}
   <h2 class="sec">Order máy bay</h2>
   <div class="bar"><button class="btn" id="addo">Thêm order</button></div>
   <div class="wrap"><table id="otbl">
-    <thead><tr><th>Thành viên</th><th>Loại máy bay</th><th>Số lượng</th><th>Thành tiền</th><th>Người phụ trách</th><th>Trạng thái</th><th></th></tr></thead>
+    <thead><tr><th>Thành viên</th><th>Loại máy bay</th><th>Số lượng</th><th>Thành tiền</th><th>Người phụ trách</th><th></th></tr></thead>
     <tbody id="orows"></tbody>
   </table><div class="empty" id="oempty" hidden>Chưa có order nào.</div></div>
 </main>
@@ -202,12 +202,9 @@ function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.ro
   $("on").innerHTML=l.length?l.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join(""):'<option value="">Chưa có '+r.toLowerCase()+'</option>'}
 $("ot").onchange=fillPT;
 
-function stTag(o){var st=o.status||"Đang chờ";return '<span class="tag'+(st==="Đã nhận"?"":" wait")+'">'+st+'</span>'}
-function cdText(at){return "Xóa sau "+Math.max(0,Math.ceil(5-(Date.now()-new Date(at).getTime())/1000))+"s"}
-function oBtns(o){if((o.status||"Đang chờ")==="Đã nhận")return '<span class="cd" data-at="'+o.received_at+'">'+cdText(o.received_at)+'</span>';
-  return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
+function oBtns(o){return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
 function renderO(){
-  $("orows").innerHTML=orders.map(function(o){return '<tr><td>'+esc(o.member_name||"—")+'</td><td>'+esc(o.model)+'</td><td>'+esc(o.qty)+'</td><td>'+fmtK((P[o.model]||o.price||0)*o.qty)+'</td><td>'+esc(o.assignee_name||"—")+'</td><td>'+stTag(o)+'</td><td><div class="act">'+oBtns(o)+'</div></td></tr>'}).join("");
+  $("orows").innerHTML=orders.map(function(o){return '<tr><td>'+esc(o.member_name||"—")+'</td><td>'+esc(o.model)+'</td><td>'+esc(o.qty)+'</td><td>'+fmtK((P[o.model]||o.price||0)*o.qty)+'</td><td>'+esc(o.assignee_name||"—")+'</td><td><div class="act">'+oBtns(o)+'</div></td></tr>'}).join("");
   $("oempty").hidden=orders.length>0}
 $("addo").onclick=function(){
   if(!list.length){toast("Hãy thêm thành viên trước");return}
@@ -220,26 +217,22 @@ $("fo").onsubmit=async function(){
 };
 $("orows").onclick=async function(ev){
   var b=ev.target.closest("button");if(!b)return;
-  if(b.dataset.recv){try{await sb.from("orders").update({status:"Đã nhận",received_at:new Date().toISOString()}).eq("id",b.dataset.recv);toast("Đã nhận máy bay · tự xóa sau 5 giây")}catch(e){fail(e)}return}
-  if(b.dataset.od){try{await sb.from("orders").delete().eq("id",b.dataset.od);toast("Đã xóa order")}catch(e){fail(e)}}
+  var o=orders.find(function(x){return x.id==(b.dataset.recv||b.dataset.od)});
+  if(b.dataset.recv){
+    if(!confirm("Xác nhận đã nhận máy bay cho "+(o?o.member_name:"")+"? Order sẽ bị xóa khỏi danh sách."))return;
+    try{var r=await sb.from("orders").delete().eq("id",b.dataset.recv);if(r.error){toast("Không xóa được: "+r.error.message)}else toast("Đã nhận máy bay, đã xóa order")}catch(e){fail(e)}
+    return}
+  if(b.dataset.od){
+    if(!confirm("Xóa/hủy order của "+(o?o.member_name:"")+"?"))return;
+    try{var r2=await sb.from("orders").delete().eq("id",b.dataset.od);if(r2.error){toast("Không xóa được: "+r2.error.message)}else toast("Đã xóa order")}catch(e){fail(e)}}
 };
-setInterval(function(){
-  var now=Date.now();
-  orders.filter(function(o){return o.status==="Đã nhận"&&o.received_at&&now-new Date(o.received_at).getTime()>=5000}).forEach(async function(o){
-    try{
-      var r=await sb.from("orders").delete().eq("id",o.id);
-      if(r.error){toast("Không xóa được order của "+(o.member_name||"?")+": "+r.error.message)}
-    }catch(e){toast("Không xóa được order: "+(e&&e.message?e.message:e))}
-  });
-  document.querySelectorAll(".cd").forEach(function(e){e.textContent=cdText(e.dataset.at)});
-},1000);
 
 /* ---- quyền & tải dữ liệu ---- */
 function setCan(){
-  CAN=!!(profile&&(profile.is_owner||(profile.member_id&&list.some(function(m){return m.id===profile.member_id&&LR.indexOf(m.role)>-1}))));
+  CAN=!!(profile&&profile.is_owner);
   document.body.classList.toggle("ro",!CAN);
   var nm=profile?profile.display_name:"";
-  $("me").textContent=(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?"Chỉnh sửa":"Chỉ xem");
+  $("me").textContent=(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?"Chỉnh sửa (owner)":"Chỉ xem");
 }
 async function loadMembers(){var r=await sb.from("members").select("*").order("id");list=r.data||[];render();setCan()}
 async function loadOrders(){var r=await sb.from("orders").select("*").order("id",{ascending:false});orders=r.data||[];renderO()}
