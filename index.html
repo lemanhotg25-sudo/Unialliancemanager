@@ -225,7 +225,12 @@ $("orows").onclick=async function(ev){
 };
 setInterval(function(){
   var now=Date.now();
-  orders.filter(function(o){return o.status==="Đã nhận"&&o.received_at&&now-new Date(o.received_at).getTime()>=5000}).forEach(function(o){sb.from("orders").delete().eq("id",o.id).catch(function(){})});
+  orders.filter(function(o){return o.status==="Đã nhận"&&o.received_at&&now-new Date(o.received_at).getTime()>=5000}).forEach(async function(o){
+    try{
+      var r=await sb.from("orders").delete().eq("id",o.id);
+      if(r.error){toast("Không xóa được order của "+(o.member_name||"?")+": "+r.error.message)}
+    }catch(e){toast("Không xóa được order: "+(e&&e.message?e.message:e))}
+  });
   document.querySelectorAll(".cd").forEach(function(e){e.textContent=cdText(e.dataset.at)});
 },1000);
 
