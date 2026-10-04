@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UniAlliance Manager</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#fff;--panel:#fff;--ink:#14232e;--mute:#5d6f7b;--line:#dbe3e8;--acc:#0f6b6b;--acc-ink:#fff;--soft:#e3f1f0;--bad:#b3362c;--badbg:#fbe9e7;
+--glass-bg:linear-gradient(135deg,rgba(120,180,255,.38),rgba(70,130,240,.22));--glass-brd:rgba(255,255,255,.55);--glass-hi:rgba(255,255,255,.6)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:28px 16px 48px}
+.brand{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.mark{flex:none;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1e6fd9,#0f6b6b);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;box-shadow:0 6px 18px -6px rgba(20,90,200,.5)}
+h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:2px 0 0}
+.me{color:var(--mute);font-size:13px;margin:-10px 0 18px;display:flex;gap:10px;align-items:center}
+.sec{font-size:18px;margin:34px 0 12px}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:20px}
+.stats b{font-size:24px;font-weight:700;display:block}
+.stats span{color:var(--mute);font-size:13px}
+.bar{position:relative;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:10px;border-radius:16px;
+  background:var(--glass-bg);-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid var(--glass-brd);box-shadow:0 8px 28px -8px rgba(30,90,220,.25),inset 0 1px 0 var(--glass-hi)}
+input,select,button{font:inherit;color:inherit}
+.bar input,.bar select{background:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.7);border-radius:8px;padding:9px 12px;min-height:40px;flex:1 1 160px}
+.btn{background:var(--acc);color:var(--acc-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;min-height:40px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:5px 10px;min-height:32px;font-size:13px}
+.btn.del{color:var(--bad)}
+.wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+th{font-size:13px;font-weight:600;color:var(--mute);background:#f7f9fa}
+tr:last-child td{border-bottom:0}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;background:var(--soft);color:var(--acc)}
+.tag.wait{background:#f2f4f5;color:var(--mute);border:1px solid var(--line)}
+.cd{color:var(--mute);font-size:13px}
+.act{white-space:nowrap;display:flex;gap:6px}
+.empty{padding:36px 16px;text-align:center;color:var(--mute)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:22px;width:min(440px,calc(100% - 24px))}
+dialog::backdrop{background:rgba(10,20,26,.5)}
+dialog h2{margin:0 0 14px;font-size:18px}
+label{display:block;font-size:13px;font-weight:500;margin:10px 0 4px}
+dialog input,dialog select{width:100%;background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-height:40px}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.msg{min-height:20px;font-size:13px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+body.lock main{visibility:hidden}
+.ro .act,.ro #add,.ro #addo,.ro th:last-child,.ro td:last-child{display:none}
+#otbl{min-width:840px}
+</style>
+</head>
+<body class="lock">
+<div id="bootErr" style="display:none;max-width:640px;margin:40px auto;padding:20px;border:1px solid #f0c;border-radius:10px;background:#fff3f2;color:#7a1f16;font:15px/1.5 system-ui,sans-serif"></div>
+<main>
+  <div class="brand"><span class="mark">UA</span><div><h1>UniAlliance Manager</h1><p class="sub">Dữ liệu dùng chung một nơi cho cả nhóm — mọi người thấy cùng một danh sách theo thời gian thực.</p></div></div>
+  <div class="me"><span id="me">Đang kết nối...</span><button class="btn ghost sm" id="out" hidden>Đăng xuất</button></div>
+
+  <div class="stats" id="stats"></div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Tìm theo tên" aria-label="Tìm thành viên">
+    <button class="btn" id="add">Thêm thành viên</button>
+  </div>
+  <div class="wrap"><table>
+    <thead><tr><th>Thành viên</th><th>Vai trò</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table><div class="empty" id="empty" hidden>Không có thành viên nào khớp.</div></div>
+
+  <h2 class="sec">Order máy bay</h2>
+  <div class="bar"><button class="btn" id="addo">Thêm order</button></div>
+  <div class="wrap"><table id="otbl">
+    <thead><tr><th>Thành viên</th><th>Loại máy bay</th><th>Số lượng</th><th>Thành tiền</th><th>Người phụ trách</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody id="orows"></tbody>
+  </table><div class="empty" id="oempty" hidden>Chưa có order nào.</div></div>
+</main>
+
+<dialog id="dla">
+  <form id="fl">
+    <h2 id="at">Đăng nhập</h2>
+    <label for="an">Tên thành viên</label><input id="an" required maxlength="60" autocomplete="username">
+    <label for="ap">Mật khẩu</label><input id="ap" type="password" required minlength="6" maxlength="60" autocomplete="current-password">
+    <div class="msg" id="am" role="status"></div>
+    <div class="foot"><button class="btn" type="submit" id="ab">Đăng nhập</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg">
+  <form method="dialog" id="f">
+    <h2 id="dt">Thêm thành viên</h2>
+    <label for="n">Họ và tên</label><input id="n" required maxlength="60">
+    <label for="r">Vai trò</label>
+    <select id="r"><option>Thành viên</option><option>Trưởng nhóm</option><option>Phó nhóm</option><option>Thư kí</option><option>Phụ bán thân rộng</option><option>Phụ bán thân hẹp</option></select>
+    <div class="foot"><button type="button" class="btn ghost" id="cancel">Hủy</button><button class="btn" type="submit">Lưu thành viên</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlo">
+  <form method="dialog" id="fo">
+    <h2>Thêm order máy bay</h2>
+    <label for="om">Thành viên</label><select id="om"></select>
+    <div class="row">
+      <div><label for="ot">Loại máy bay</label><select id="ot"></select></div>
+      <div><label for="oq">Số lượng</label><input id="oq" type="number" min="1" value="1" required></div>
+    </div>
+    <label for="on">Người phụ trách</label><select id="on"></select>
+    <div class="foot"><button type="button" class="btn ghost" id="cancelo">Hủy</button><button class="btn" type="submit">Lưu order</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ====== 1) DÁN THÔNG TIN SUPABASE CỦA BẠN VÀO ĐÂY ======
+   Project Settings > API > Project URL, và anon public key. */
+var SUPA_URL = "https://licecnrfftxdalzoyxyw.supabase.co";
+var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpY2VjbnJmZnR4ZGFsem95eHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzM5MjksImV4cCI6MjEwNjYwOTkyOX0.rDpGi8Wyczj9Jd2ygY-RdOw7evNd4M-yVj5hzcBwskc";
+/* ======================================================= */
+
+function showBootErr(msg){var b=document.getElementById("bootErr");b.style.display="block";b.innerHTML=msg}
+if(/YOUR-PROJECT|YOUR-ANON/.test(SUPA_URL+SUPA_KEY)){
+  showBootErr("Trang chưa chạy được vì bạn chưa dán Project URL và anon key của Supabase vào file. Mở file, tìm hai dòng SUPA_URL và SUPA_KEY gần đầu phần &lt;script&gt;, thay giá trị mẫu bằng giá trị thật lấy từ Supabase &gt; Project Settings &gt; API.");
+  throw new Error("Chưa cấu hình SUPA_URL/SUPA_KEY");
+}
+if(typeof supabase==="undefined"){
+  showBootErr("Không tải được thư viện Supabase (supabase-js) từ CDN. Kiểm tra mạng, hoặc trình chặn quảng cáo/tường lửa có thể đang chặn cdn.jsdelivr.net. Thử tải lại trang hoặc đổi mạng.");
+  throw new Error("Thiếu supabase-js");
+}
+var sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+var $=function(i){return document.getElementById(i)};
+var LR=["Trưởng nhóm","Phó nhóm","Thư kí"];
+var list=[], orders=[], me=null, profile=null, CAN=false, editId=null;
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function fmtK(n){return n==null?"—":String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,".")+"k"}
+function toast(t){var el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove("on")},1800)}
+function slugEmail(name){return name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,".").replace(/^\.+|\.+$/g,"")+"@unialliance.local"}
+function fail(e){toast("Không lưu được: "+(e&&e.message?e.message:"lỗi không rõ"))}
+
+/* ---- thành viên ---- */
+function render(){
+  var q=$("q").value.trim().toLowerCase();
+  var out=list.filter(function(m){return !q||m.name.toLowerCase().indexOf(q)>-1});
+  $("rows").innerHTML=out.map(function(m){return '<tr><td>'+esc(m.name)+'</td><td>'+esc(m.role)+'</td><td><div class="act"><button class="btn ghost sm" data-ed="'+m.id+'">Sửa</button><button class="btn ghost sm del" data-del="'+m.id+'">Xóa</button></div></td></tr>'}).join("");
+  $("empty").hidden=out.length>0;
+  $("stats").innerHTML='<div><b>'+list.length+'</b><span>Tổng thành viên</span></div>';
+}
+function openM(m){editId=m?m.id:null;$("dt").textContent=m?"Sửa thành viên":"Thêm thành viên";$("n").value=m?m.name:"";$("r").value=m?m.role:"Thành viên";$("dlg").showModal();$("n").focus()}
+$("add").onclick=function(){openM(null)};
+$("cancel").onclick=function(){$("dlg").close()};
+$("q").oninput=render;
+$("f").onsubmit=async function(){
+  var v={name:$("n").value.trim(),role:$("r").value};
+  try{
+    if(editId){await sb.from("members").update(v).eq("id",editId);toast("Đã cập nhật thành viên")}
+    else{await sb.from("members").insert(v);toast("Đã thêm thành viên")}
+  }catch(e){fail(e)}
+};
+$("rows").onclick=async function(ev){
+  var b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.ed)openM(list.find(function(m){return m.id==b.dataset.ed}));
+  else if(b.dataset.del){var m=list.find(function(x){return x.id==b.dataset.del});
+    if(confirm("Xóa "+m.name+" khỏi danh sách?")){try{await sb.from("members").delete().eq("id",m.id);toast("Đã xóa thành viên")}catch(e){fail(e)}}}
+};
+
+/* ---- máy bay ---- */
+var FL=[["Airbus A220","A220-100:72800,A220-300:81200"],["Airbus A320","A318-100:70000,A319-100:81840,A320-200:84800,A321-200:90640"],
+["Airbus A320neo","A319neo:85200,A320neo:91480,A321neo:101000,A321LR:106000,A321XLR:114000"],["Airbus A330","A330-200:215800,A330-300:225000"],
+["Airbus A330neo","A330-800:240000,A330-900:260000"],["Airbus A340","A340-300:238000,A340-600:275000"],
+["Airbus A350","A350-900:295000,A350-900ULR:305000,A350-1000:345000,A350-1000ULR:355000"],["Airbus A380","A380-800:445000"],
+["Boeing 717","717-200:65000"],["Boeing 737","737-600:70000,737-700:80000,737-800:86000,737-900:92500,737-900ER:99000"],
+["Boeing 737 MAX","737 MAX 7:90000,737 MAX 8:98500,737 MAX 8200:100000,737 MAX 9:104000,737 MAX 10:112000"],
+["Boeing 747","747-400:260000,747-400D:250000,747-8:380000"],["Boeing 757","757-200:115000,757-300:135000"],
+["Boeing 767","767-300ER:185000,767-400ER:210000"],["Boeing 777","777-200:230000,777-200ER:250000,777-200LR:280000,777-300:290000,777-300ER:330000"],
+["Boeing 777X","777-9:410000"],["Boeing 787 Dreamliner","787-8:225000,787-9:270000,787-10:310000"],
+["Embraer ERJ","ERJ-135:22000,ERJ-140:25000,ERJ-145:30000,ERJ-145XR:33000"],["Embraer E-Jet","E170:40000,E175:44000,E175LR:46000,E190:50000,E195:55000"],
+["Embraer E-Jet E2","E190-E2:60000,E195-E2:68000"],["Bombardier CRJ","CRJ-200:24000,CRJ-550:28000,CRJ-700:35000,CRJ-705:37000,CRJ-900:42000,CRJ-1000:48000"],
+["ATR","ATR 42-600:21000,ATR 72-600:25000"],["De Havilland Canada Dash 8","Dash 8 Q100:15000,Dash 8 Q200:17000,Dash 8 Q300:20000,Dash 8 Q400:31000"],
+["Comac","ARJ-21-700:32000,C919-100STD:89000,C919-100ER:95000"],["UAC Sukhoi Superjet 100","Superjet 100-95B:35000,Superjet 100-95LR:38000"]];
+var P={},W={},WG=["Airbus A330","Airbus A330neo","Airbus A340","Airbus A350","Airbus A380","Boeing 747","Boeing 767","Boeing 777","Boeing 777X","Boeing 787 Dreamliner"];
+(function(){var h="";FL.forEach(function(g){var w=WG.indexOf(g[0])>-1;h+='<optgroup label="'+g[0]+'">'+g[1].split(",").map(function(x){var a=x.split(":");P[a[0]]=+a[1];if(w)W[a[0]]=1;return '<option value="'+a[0]+'">'+a[0]+' ('+fmtK(+a[1])+')</option>'}).join("")+'</optgroup>'});$("ot").innerHTML=h})();
+function cat(model){return W[model]?"Phụ bán thân rộng":"Phụ bán thân hẹp"}
+function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.role===r});
+  $("on").innerHTML=l.length?l.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join(""):'<option value="">Chưa có '+r.toLowerCase()+'</option>'}
+$("ot").onchange=fillPT;
+
+function stTag(o){var st=o.status||"Đang chờ";return '<span class="tag'+(st==="Đã nhận"?"":" wait")+'">'+st+'</span>'}
+function cdText(at){return "Xóa sau "+Math.max(0,Math.ceil(5-(Date.now()-new Date(at).getTime())/1000))+"s"}
+function oBtns(o){if((o.status||"Đang chờ")==="Đã nhận")return '<span class="cd" data-at="'+o.received_at+'">'+cdText(o.received_at)+'</span>';
+  return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
+function renderO(){
+  $("orows").innerHTML=orders.map(function(o){return '<tr><td>'+esc(o.member_name||"—")+'</td><td>'+esc(o.model)+'</td><td>'+esc(o.qty)+'</td><td>'+fmtK((P[o.model]||o.price||0)*o.qty)+'</td><td>'+esc(o.assignee_name||"—")+'</td><td>'+stTag(o)+'</td><td><div class="act">'+oBtns(o)+'</div></td></tr>'}).join("");
+  $("oempty").hidden=orders.length>0}
+$("addo").onclick=function(){
+  if(!list.length){toast("Hãy thêm thành viên trước");return}
+  $("om").innerHTML=list.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join("");
+  $("ot").selectedIndex=0;$("oq").value=1;fillPT();$("dlo").showModal()};
+$("cancelo").onclick=function(){$("dlo").close()};
+$("fo").onsubmit=async function(){
+  var m=list.find(function(x){return x.id==$("om").value}),a=list.find(function(x){return x.id==$("on").value}),model=$("ot").value;
+  try{await sb.from("orders").insert({member_id:m.id,member_name:m.name,model:model,price:P[model]||null,qty:Math.max(1,parseInt($("oq").value,10)||1),assignee_id:a?a.id:null,assignee_name:a?a.name:null,status:"Đang chờ"});toast("Đã thêm order")}catch(e){fail(e)}
+};
+$("orows").onclick=async function(ev){
+  var b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.recv){try{await sb.from("orders").update({status:"Đã nhận",received_at:new Date().toISOString()}).eq("id",b.dataset.recv);toast("Đã nhận máy bay · tự xóa sau 5 giây")}catch(e){fail(e)}return}
+  if(b.dataset.od){try{await sb.from("orders").delete().eq("id",b.dataset.od);toast("Đã xóa order")}catch(e){fail(e)}}
+};
+setInterval(function(){
+  var now=Date.now();
+  orders.filter(function(o){return o.status==="Đã nhận"&&o.received_at&&now-new Date(o.received_at).getTime()>=5000}).forEach(function(o){sb.from("orders").delete().eq("id",o.id).catch(function(){})});
+  document.querySelectorAll(".cd").forEach(function(e){e.textContent=cdText(e.dataset.at)});
+},1000);
+
+/* ---- quyền & tải dữ liệu ---- */
+function setCan(){
+  CAN=!!(profile&&(profile.is_owner||(profile.member_id&&list.some(function(m){return m.id===profile.member_id&&LR.indexOf(m.role)>-1}))));
+  document.body.classList.toggle("ro",!CAN);
+  var nm=profile?profile.display_name:"";
+  $("me").textContent=(nm?"Đăng nhập: "+nm+" · ":"")+"Quyền: "+(CAN?"Chỉnh sửa":"Chỉ xem");
+}
+async function loadMembers(){var r=await sb.from("members").select("*").order("id");list=r.data||[];render();setCan()}
+async function loadOrders(){var r=await sb.from("orders").select("*").order("id",{ascending:false});orders=r.data||[];renderO()}
+sb.channel("db-changes")
+  .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
+  .on("postgres_changes",{event:"*",schema:"public",table:"orders"},loadOrders)
+  .subscribe();
+
+/* ---- chỉ đăng nhập (tài khoản tạo sẵn ở Supabase Dashboard) ---- */
+$("dla").addEventListener("cancel",function(e){e.preventDefault()});
+$("out").onclick=async function(){await sb.auth.signOut();me=null;profile=null;location.reload()};
+
+$("fl").onsubmit=async function(ev){ev.preventDefault();
+  var name=$("an").value.trim(),pw=$("ap").value,email=slugEmail(name),am=$("am");
+  am.style.color="var(--bad)";
+  var si=await sb.auth.signInWithPassword({email:email,password:pw});
+  if(si.error){am.textContent="Sai tên hoặc mật khẩu, hoặc tài khoản chưa được tạo.";return}
+  await checkSession();
+};
+
+async function checkSession(){
+  var s=(await sb.auth.getSession()).data.session;
+  if(!s){document.body.classList.add("lock");MODE="login";modeUI();if(!$("dla").open)$("dla").showModal();return}
+  me=s.user;
+  var pr=await sb.from("profiles").select("*").eq("id",me.id).maybeSingle();
+  profile=pr.data;
+  if(!profile){await sb.auth.signOut();$("am").textContent="Tài khoản chưa có hồ sơ, báo người quản lý thêm hồ sơ trong profiles.";document.body.classList.add("lock");return}
+  document.body.classList.remove("lock");$("out").hidden=false;if($("dla").open)$("dla").close();
+  await loadMembers();await loadOrders();
+}
+checkSession().catch(function(e){showBootErr("Có lỗi khi kết nối tới Supabase: "+(e&&e.message?e.message:e)+". Kiểm tra lại SUPA_URL/SUPA_KEY và luật RLS trong SQL đã chạy đúng chưa.")});
+</script>
+</body>
+</html>
