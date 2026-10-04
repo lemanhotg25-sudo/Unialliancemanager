@@ -246,7 +246,7 @@ $("fl").onsubmit=async function(ev){ev.preventDefault();
 
 async function checkSession(){
   var s=(await sb.auth.getSession()).data.session;
-  if(!s){document.body.classList.add("lock");MODE="login";modeUI();if(!$("dla").open)$("dla").showModal();return}
+  if(!s){document.body.classList.add("lock");if(!$("dla").open)$("dla").showModal();return}
   me=s.user;
   var pr=await sb.from("profiles").select("*").eq("id",me.id).maybeSingle();
   profile=pr.data;
