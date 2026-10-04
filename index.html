@@ -71,7 +71,7 @@ body.lock main{opacity:0}
     <button class="btn" id="add">Thêm thành viên</button>
   </div>
   <div class="wrap"><table>
-    <thead><tr><th>Thành viên</th><th>Vai trò</th><th></th></tr></thead>
+    <thead><tr><th>Thành viên</th><th>Vai trò 1</th><th>Vai trò 2</th><th></th></tr></thead>
     <tbody id="rows"></tbody>
   </table><div class="empty" id="empty" hidden>Không có thành viên nào khớp.</div></div>
 
@@ -107,8 +107,10 @@ body.lock main{opacity:0}
   <form method="dialog" id="f">
     <h2 id="dt">Thêm thành viên</h2>
     <label for="n">Họ và tên</label><input id="n" required maxlength="60">
-    <label for="r">Vai trò</label>
+    <label for="r">Vai trò 1</label>
     <select id="r"><option>Thành viên</option><option>Trưởng nhóm</option><option>Phó nhóm</option><option>Thư kí</option><option>Phụ bán thân rộng</option><option>Phụ bán thân hẹp</option></select>
+    <label for="r2">Vai trò 2 (không bắt buộc)</label>
+    <select id="r2"><option value="">— Không có —</option><option>Thành viên</option><option>Trưởng nhóm</option><option>Phó nhóm</option><option>Thư kí</option><option>Phụ bán thân rộng</option><option>Phụ bán thân hẹp</option></select>
     <div class="foot"><button type="button" class="btn ghost" id="cancel">Hủy</button><button class="btn" type="submit">Lưu thành viên</button></div>
   </form>
 </dialog>
@@ -159,16 +161,16 @@ function fail(e){toast("Không lưu được: "+(e&&e.message?e.message:"lỗi k
 function render(){
   var q=$("q").value.trim().toLowerCase();
   var out=list.filter(function(m){return !q||m.name.toLowerCase().indexOf(q)>-1});
-  $("rows").innerHTML=out.map(function(m){return '<tr><td>'+esc(m.name)+'</td><td>'+esc(m.role)+'</td><td><div class="act"><button class="btn ghost sm" data-ed="'+m.id+'">Sửa</button><button class="btn ghost sm del" data-del="'+m.id+'">Xóa</button></div></td></tr>'}).join("");
+  $("rows").innerHTML=out.map(function(m){return '<tr><td>'+esc(m.name)+'</td><td>'+esc(m.role)+'</td><td>'+esc(m.role2||"—")+'</td><td><div class="act"><button class="btn ghost sm" data-ed="'+m.id+'">Sửa</button><button class="btn ghost sm del" data-del="'+m.id+'">Xóa</button></div></td></tr>'}).join("");
   $("empty").hidden=out.length>0;
   $("stats").innerHTML='<div><b>'+list.length+'</b><span>Tổng thành viên</span></div>';
 }
-function openM(m){editId=m?m.id:null;$("dt").textContent=m?"Sửa thành viên":"Thêm thành viên";$("n").value=m?m.name:"";$("r").value=m?m.role:"Thành viên";$("dlg").showModal();$("n").focus()}
+function openM(m){editId=m?m.id:null;$("dt").textContent=m?"Sửa thành viên":"Thêm thành viên";$("n").value=m?m.name:"";$("r").value=m?m.role:"Thành viên";$("r2").value=m&&m.role2?m.role2:"";$("dlg").showModal();$("n").focus()}
 $("add").onclick=function(){openM(null)};
 $("cancel").onclick=function(){$("dlg").close()};
 $("q").oninput=render;
 $("f").onsubmit=async function(){
-  var v={name:$("n").value.trim(),role:$("r").value};
+  var v={name:$("n").value.trim(),role:$("r").value,role2:$("r2").value||null};
   try{
     if(editId){await sb.from("members").update(v).eq("id",editId);toast("Đã cập nhật thành viên")}
     else{await sb.from("members").insert(v);toast("Đã thêm thành viên")}
@@ -198,7 +200,7 @@ var FL=[["Airbus A220","A220-100:72800,A220-300:81200"],["Airbus A320","A318-100
 var P={},W={},WG=["Airbus A330","Airbus A330neo","Airbus A340","Airbus A350","Airbus A380","Boeing 747","Boeing 767","Boeing 777","Boeing 777X","Boeing 787 Dreamliner"];
 (function(){var h="";FL.forEach(function(g){var w=WG.indexOf(g[0])>-1;h+='<optgroup label="'+g[0]+'">'+g[1].split(",").map(function(x){var a=x.split(":");P[a[0]]=+a[1];if(w)W[a[0]]=1;return '<option value="'+a[0]+'">'+a[0]+' ('+fmtK(+a[1])+')</option>'}).join("")+'</optgroup>'});$("ot").innerHTML=h})();
 function cat(model){return W[model]?"Phụ bán thân rộng":"Phụ bán thân hẹp"}
-function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.role===r});
+function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.role===r||m.role2===r});
   $("on").innerHTML=l.length?l.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join(""):'<option value="">Chưa có '+r.toLowerCase()+'</option>'}
 $("ot").onchange=fillPT;
 
@@ -209,6 +211,7 @@ function renderO(){
 $("addo").onclick=function(){
   if(!list.length){toast("Hãy thêm thành viên trước");return}
   $("om").innerHTML=list.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join("");
+  if(profile&&profile.member_id&&list.some(function(m){return m.id===profile.member_id})){$("om").value=profile.member_id}
   $("ot").selectedIndex=0;$("oq").value=1;fillPT();$("dlo").showModal()};
 $("cancelo").onclick=function(){$("dlo").close()};
 $("fo").onsubmit=async function(){
