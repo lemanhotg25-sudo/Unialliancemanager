@@ -62,7 +62,8 @@ body.lock main{visibility:hidden}
 main{transition:opacity .2s}
 body:not(.lock) main{opacity:1}
 body.lock main{opacity:0}
-.ro .act,.ro #add,.ro th:last-child,.ro td:last-child{display:none}#otbl{min-width:840px}
+.ro .act,.ro #add,.ro th:last-child,.ro td:last-child{display:none}
+#otbl{min-width:840px}
 .csel{position:relative;display:inline-block;width:100%}
 .csel.sm{width:auto}
 .csel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -251,7 +252,10 @@ function enhanceSelect(sel,opts){
   };
 }
 document.addEventListener("click",cselCloseAll);
-window.addEventListener("scroll",cselCloseAll,true);
+window.addEventListener("scroll",function(e){
+  if(e.target&&e.target.closest&&e.target.closest(".csel-panel"))return;
+  cselCloseAll();
+},true);
 window.addEventListener("resize",cselCloseAll);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")cselCloseAll()});
 
@@ -311,6 +315,7 @@ var FL=[["Airbus A220","A220-100:72800,A220-300:81200"],["Airbus A320","A318-100
 ["Airbus A330neo","A330-800:240000,A330-900:260000"],["Airbus A340","A340-300:238000,A340-600:275000"],
 ["Airbus A350","A350-900:295000,A350-900ULR:305000,A350-1000:345000,A350-1000ULR:355000"],["Airbus A380","A380-800:445000"],
 ["Boeing 717","717-200:65000"],["Boeing 737","737-600:70000,737-700:80000,737-800:86000,737-900:92500,737-900ER:99000"],
+["Boeing 737 MAX","737-600:70000,737-700:80000,737-800:86000,737-900:92500,737-900ER:99000"],
 ["Boeing 737 MAX","737 MAX 7:90000,737 MAX 8:98500,737 MAX 8200:100000,737 MAX 9:104000,737 MAX 10:112000"],
 ["Boeing 747","747-400:260000,747-400D:250000,747-8:380000"],["Boeing 757","757-200:115000,757-300:135000"],
 ["Boeing 767","767-300ER:185000,767-400ER:210000"],["Boeing 777","777-200:230000,777-200ER:250000,777-200LR:280000,777-300:290000,777-300ER:330000"],
@@ -326,7 +331,9 @@ function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.ro
   $("on").innerHTML=l.length?l.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join(""):'<option value="">Chưa có '+r.toLowerCase()+'</option>';
   enhanceSelect($("on"))}
 $("ot").onchange=fillPT;
-enhanceSelect($("ot"));function oBtns(o){return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
+enhanceSelect($("ot"));
+
+function oBtns(o){return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
 function renderO(){
   $("orows").innerHTML=orders.map(function(o){return '<tr><td>'+esc(o.member_name||"—")+'</td><td>'+esc(o.model)+'</td><td>'+esc(o.qty)+'</td><td>'+fmtK((P[o.model]||o.price||0)*o.qty)+'</td><td>'+esc(o.assignee_name||"—")+'</td><td><div class="act">'+oBtns(o)+'</div></td></tr>'}).join("");
   $("oempty").hidden=orders.length>0}
