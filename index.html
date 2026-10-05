@@ -62,8 +62,7 @@ body.lock main{visibility:hidden}
 main{transition:opacity .2s}
 body:not(.lock) main{opacity:1}
 body.lock main{opacity:0}
-.ro .act,.ro #add,.ro th:last-child,.ro td:last-child{display:none}
-#otbl{min-width:840px}
+.ro .act,.ro #add,.ro th:last-child,.ro td:last-child{display:none}#otbl{min-width:840px}
 .csel{position:relative;display:inline-block;width:100%}
 .csel.sm{width:auto}
 .csel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -236,7 +235,8 @@ function enhanceSelect(sel,opts){
     cselCloseAll();
     if(wasOpen||btn.disabled)return;
     var panel=cselBuildPanel(sel);
-    document.body.appendChild(panel);
+    var host=sel.closest("dialog")||document.body;
+    host.appendChild(panel);
     var r=btn.getBoundingClientRect();
     var pw=Math.max(r.width,200);
     var estH=Math.min(300,40*Math.min(8,sel.options.length)+16);
@@ -326,9 +326,7 @@ function fillPT(){var r=cat($("ot").value),l=list.filter(function(m){return m.ro
   $("on").innerHTML=l.length?l.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join(""):'<option value="">Chưa có '+r.toLowerCase()+'</option>';
   enhanceSelect($("on"))}
 $("ot").onchange=fillPT;
-enhanceSelect($("ot"));
-
-function oBtns(o){return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
+enhanceSelect($("ot"));function oBtns(o){return '<button class="btn ghost sm" data-recv="'+o.id+'">Đã nhận</button><button class="btn ghost sm del" data-od="'+o.id+'">Xóa/Hủy</button>'}
 function renderO(){
   $("orows").innerHTML=orders.map(function(o){return '<tr><td>'+esc(o.member_name||"—")+'</td><td>'+esc(o.model)+'</td><td>'+esc(o.qty)+'</td><td>'+fmtK((P[o.model]||o.price||0)*o.qty)+'</td><td>'+esc(o.assignee_name||"—")+'</td><td><div class="act">'+oBtns(o)+'</div></td></tr>'}).join("");
   $("oempty").hidden=orders.length>0}
